@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Void.Database;
+using Void.DTOs;
 using Void.Models;
 
 namespace Void.Repositories
@@ -6,29 +8,48 @@ namespace Void.Repositories
     public class ChatRepository
     {
         private readonly DatabaseContext _context;
+
         public ChatRepository(DatabaseContext context)
         {
             _context = context;
         }
-        public List<Chat> GetAll()
+
+        public async Task<List<ChatWithUserDTO>> GetAllWithUserAsync()
         {
-            return _context.Chats.ToList();
+            return await _context.Chats
+                .OrderBy(c => c.Timestamp)
+                .Select(c => new ChatWithUserDTO
+                {
+                    Id = c.Id,
+                    Content = c.Content,
+                    Timestamp = c.Timestamp,
+                    SenderId = c.SenderId,
+                    SenderName = _context.Users
+                        .Where(u => u.Id == c.SenderId)
+                        .Select(u => u.UserName)
+                        .FirstOrDefault() ?? "Unknown"
+                })
+                .ToListAsync();
         }
-        public Chat? GetById(int id)
+
+        public async Task<Chat?> GetByIdAsync(int id)
         {
-            return _context.Chats.FirstOrDefault(c => c.Id == id);
+            return await _context.Chats.FirstOrDefaultAsync(c => c.Id == id);
         }
-        public void Add(Chat chat)
+
+        public async Task AddAsync(Chat chat)
         {
             _context.Chats.Add(chat);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
-        public bool Delete(int id)
+
+        public async Task<bool> DeleteAsync(int id)
         {
-            var chat = GetById(id);
+            var chat = await GetByIdAsync(id);
             if (chat == null) return false;
+
             _context.Chats.Remove(chat);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return true;
         }
     }
