@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using AuthenticationService = Void.Services.AuthenticationService;
 
-
 namespace Void.Controllers
 {
     [Route("api/[controller]")]
@@ -13,60 +12,53 @@ namespace Void.Controllers
     {
         private readonly AuthenticationService _authenticationService;
 
-        public AuthenticationController(
-            AuthenticationService authenticationService)
+        public AuthenticationController(AuthenticationService authenticationService)
         {
             _authenticationService = authenticationService;
         }
 
         [HttpPost("register")]
-        public IActionResult Register([FromBody] Dictionary<string, string> requestData)
+        public IActionResult Register([FromBody] RegisterRequest request)
         {
             try
             {
-                if (!requestData.TryGetValue("username", out var username) ||
-                    !requestData.TryGetValue("password", out var password) ||
-                    !requestData.TryGetValue("confirmPassword", out var confirmPassword) ||
-                    !requestData.TryGetValue("email", out var email))
-                {
-                    return BadRequest("Missing required fields");
-                }
-
-                _authenticationService.Register(username, password, confirmPassword, email);
-                return Ok($"User {username} registered successfully");
+                _authenticationService.Register(request.Username, request.Password, request.ConfirmPassword, request.Email);
+                return Ok($"User {request.Username} registered successfully");
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            if (_authenticationService.Login(request.Username, request.Password))
+            var user = _authenticationService.Login(request.Username, request.Password);
+
+            if (user == null)
+                return Unauthorized(new { message = "Invalid credentials" });
+
+            var claims = new List<Claim>
             {
-                var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, request.Username)
-        };
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim("UserId", user.Id.ToString())
+            };
 
-                var identity = new ClaimsIdentity(claims,
-                    CookieAuthenticationDefaults.AuthenticationScheme);
+            var identity = new ClaimsIdentity(claims,
+                CookieAuthenticationDefaults.AuthenticationScheme);
 
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(identity),
-                    new AuthenticationProperties
-                    {
-                        IsPersistent = request.RememberMe
-                    });
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity));
 
-                return Ok(new { message = "Logged in" });
-            }
-            return Unauthorized(new { message = "Invalid credentials" });
+            return Ok(new
+            {
+                Id = user.Id,
+                Username = user.UserName,
+                Message = "Logged in successfully"
+            });
         }
-
-        public record LoginRequest(string Username, string Password, bool RememberMe = false);
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
@@ -79,10 +71,23 @@ namespace Void.Controllers
         public ActionResult CheckAuth()
         {
             if (User.Identity.IsAuthenticated)
-
                 return Ok($"Hello {User.Identity.Name}");
             return Unauthorized();
+        }
 
+
+        public class RegisterRequest
+        {
+            public string Username { get; set; }
+            public string Password { get; set; }
+            public string ConfirmPassword { get; set; }
+            public string Email { get; set; }
+        }
+
+        public class LoginRequest
+        {
+            public string Username { get; set; }
+            public string Password { get; set; }
         }
     }
 }
