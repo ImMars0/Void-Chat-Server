@@ -9,12 +9,10 @@ namespace Void.Controllers
     public class FriendshipController : ControllerBase
     {
         private readonly FriendshipService _friendshipService;
-        private readonly UserService _userService;
 
         public FriendshipController(FriendshipService friendshipService, UserService userService)
         {
             _friendshipService = friendshipService;
-            _userService = userService;
         }
 
         private int GetCurrentUserId()
@@ -32,17 +30,19 @@ namespace Void.Controllers
             {
                 var userId = GetCurrentUserId();
                 var friendship = await _friendshipService.SendFriendRequest(userId, request.FriendId);
+
                 return Ok(new { message = "Friend request sent", friendshipId = friendship.Id });
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { error = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.Message);
+                return Conflict(new { error = ex.Message });
             }
         }
+
 
         [HttpPost("respond")]
         public async Task<IActionResult> RespondToFriendRequest([FromBody] FriendshipResponseDTO response)
