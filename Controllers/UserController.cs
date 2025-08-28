@@ -77,5 +77,16 @@ namespace Void.Controllers
                 return NotFound();
             }
         }
+        [HttpPost("heartbeat/{userId}")]
+        public IActionResult Heartbeat(int userId)
+        {
+            _userService.MarkUserActive(userId);
+            return Ok();
+        }
+
+
+
+
+
     }
 }

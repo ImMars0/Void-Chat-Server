@@ -16,54 +16,56 @@ namespace Void.Services
 
         public User? GetById(int id) => _userRepository.GetById(id);
 
-        public List<User> FindByName(string name) => _userRepository.FindByName(name);
+        public User? GetByUsername(string username) =>
+            _userRepository.GetByUsername(username);
 
-        public bool Delete(int id) => _userRepository.Delete(id);
+        public List<User> FindByName(string name) =>
+            _userRepository.FindByName(name);
 
-        public bool Update(int id, User updateUser) => _userRepository.Update(id, updateUser);
-
-        public UserRepository Get_userRepository()
+        public bool Delete(int id)
         {
-            return _userRepository;
+            var user = _userRepository.GetById(id);
+            if (user == null) return false;
+
+            _userRepository.Delete(user);
+            return true;
         }
 
-        public void Register(User newUser, string confirmPassword, UserRepository _userRepository)
+        public bool Update(int id, User updatedUser)
         {
-            ValidatePassword(newUser.Password, confirmPassword);
-            ValidateEmail(newUser.Email);
+            var user = _userRepository.GetById(id);
+            if (user == null) return false;
 
-            if (_userRepository.UserExists(newUser.UserName))
-                throw new ArgumentException("Username already exists");
-            _userRepository.AddUser(newUser);
-        }
+            user.UserName = updatedUser.UserName;
+            user.Password = updatedUser.Password;
+            user.Email = updatedUser.Email;
 
-        public bool ValidateLogin(string username, string password)
-        {
-            var user = _userRepository.FindByName(username).FirstOrDefault();
-            return user != null && user.Password == password;
+            _userRepository.Update(user);
+            return true;
         }
 
 
-        private void ValidatePassword(string password, string confirmPassword)
-        {
-            if (password != confirmPassword)
-                throw new ArgumentException("Passwords do not match");
+        public bool UserExists(string username) => _userRepository.UserExists(username);
 
-            if (password.Length < 6)
-                throw new ArgumentException("Password must be at least 6 characters");
+        public bool EmailExists(string email) => _userRepository.EmailExists(email);
+
+        public void Add(User user) => _userRepository.Add(user);
+
+        public async Task<User?> GetByIdAsync(int id)
+        {
+            return await _userRepository.GetByIdAsync(id);
         }
 
-        private void ValidateEmail(string email)
+        public void MarkUserActive(int userId)
         {
-            if (string.IsNullOrEmpty(email) || !email.Contains("@"))
-                throw new ArgumentException("Invalid email format");
+            _userRepository.UpdateLastActive(userId);
         }
 
-        internal void AddUser(User user)
+        public DateTime? GetLastActive(int userId)
         {
-            throw new NotImplementedException();
+            var user = _userRepository.GetById(userId);
+            return user?.LastActive;
         }
-
 
     }
 }

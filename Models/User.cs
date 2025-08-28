@@ -7,7 +7,11 @@
         public string? Email { get; set; }
         public string? Password { get; set; }
 
+        public DateTime? LastActive { get; set; }
 
+
+        public virtual ICollection<Chat> SentChats { get; set; } = new List<Chat>();
+        public virtual ICollection<Chat> ReceivedChats { get; set; } = new List<Chat>();
 
     }
 }

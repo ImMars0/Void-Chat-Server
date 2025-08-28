@@ -17,17 +17,19 @@ namespace Void.Repositories
         public async Task<List<ChatWithUserDTO>> GetAllWithUserAsync()
         {
             return await _context.Chats
+                .Include(c => c.Sender)    // Eager load sender
+                .Include(c => c.Receiver)  // Eager load receiver
                 .OrderBy(c => c.Timestamp)
                 .Select(c => new ChatWithUserDTO
                 {
                     Id = c.Id,
-                    Content = c.Content,
-                    Timestamp = c.Timestamp,
-                    SenderId = c.SenderId,
-                    SenderName = _context.Users
-                        .Where(u => u.Id == c.SenderId)
-                        .Select(u => u.UserName)
-                        .FirstOrDefault() ?? "Unknown"
+                    Content = c.Content ?? string.Empty,
+                    Timestamp = c.Timestamp ?? DateTime.UtcNow,
+                    SenderId = c.SenderId ?? 0,
+                    SenderName = c.Sender != null ? c.Sender.UserName : "Unknown",
+                    ReceiverId = c.ReceiverId ?? 0,
+                    ReceiverName = c.Receiver != null ? c.Receiver.UserName : "Unknown",
+                    IsRead = c.IsRead ?? false
                 })
                 .ToListAsync();
         }
@@ -51,6 +53,12 @@ namespace Void.Repositories
             _context.Chats.Remove(chat);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task UpdateAsync(Chat chat)
+        {
+            _context.Chats.Update(chat);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Void.Database;
 using Void.Models;
 
-
 namespace Void.Repositories
 {
     public class UserRepository
@@ -13,70 +12,59 @@ namespace Void.Repositories
             _context = context;
         }
 
-        public List<User> GetAll()
-        {
-            return _context.Users.ToList();
-        }
+        public List<User> GetAll() => _context.Users.ToList();
 
-        public User? GetUserByUsername(string username)
-        {
-            return _context.Users.FirstOrDefault(u => u.UserName == username);
-        }
 
-        public void AddUser(User user)
+
+        public User? GetById(int id) => _context.Users.FirstOrDefault(u => u.Id == id);
+
+        public User? GetByUsername(string username) =>
+            _context.Users.FirstOrDefault(u => u.UserName == username);
+
+        public List<User> FindByName(string name) =>
+            _context.Users.Where(u => u.UserName.Contains(name)).ToList();
+
+        public void Add(User user)
         {
             _context.Users.Add(user);
             _context.SaveChanges();
         }
 
-        public User? GetById(int id)
+        public void Update(User user)
         {
-            return _context.Users.FirstOrDefault(u => u.Id == id);
-        }
-
-        public bool Delete(int id)
-        {
-            var user = GetById(id);
-            if (user == null) return false;
-            _context.Users.Remove(user);
-            _context.SaveChanges();
-            return true;
-        }
-
-        public bool Update(int id, User updateUser)
-        {
-            var user = GetById(id);
-            if (user == null) return false;
-            user.UserName = updateUser.UserName;
-            user.Password = updateUser.Password;
-            user.Email = updateUser.Email;
             _context.Users.Update(user);
             _context.SaveChanges();
-            return true;
         }
 
-        public bool UserExists(string username)
+        public void Delete(User user)
         {
-            return _context.Users.Any(u => u.UserName == username);
+            _context.Users.Remove(user);
+            _context.SaveChanges();
         }
-        public bool EmailExists(string email)
+
+        public bool UserExists(string username) =>
+            _context.Users.Any(u => u.UserName == username);
+
+        public bool EmailExists(string email) =>
+            _context.Users.Any(u => u.Email == email);
+
+
+        public async Task<User?> GetByIdAsync(int id)
         {
-            return _context.Users.Any(u => u.Email == email);
+            return await _context.Users.FindAsync(id);
         }
 
-        public bool ValidateUser(string username, string password)
+        public void UpdateLastActive(int userId)
         {
-            var user = _context.Users
-                .FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
-
-            return user != null && BCrypt.Net.BCrypt.EnhancedVerify(password, user.Password);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user != null)
+            {
+                user.LastActive = DateTime.UtcNow;
+                _context.SaveChanges();
+            }
         }
-
-        public List<User> FindByName(string name)
-        {
-            return _context.Users.Where(u => u.UserName.Contains(name)).ToList();
-        }
-
 
     }
 }
+
+
