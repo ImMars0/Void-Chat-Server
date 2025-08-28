@@ -4,12 +4,12 @@ using Void.Models;
 
 namespace Void.Hubs
 {
-    public class ChatHub : Hub
+    public class GroupChatHub : Hub
     {
         private readonly DatabaseContext _context;
         private static readonly HashSet<int> ConnectedUsers = new();
 
-        public ChatHub(DatabaseContext context)
+        public GroupChatHub(DatabaseContext context)
         {
             _context = context;
         }
@@ -37,35 +37,6 @@ namespace Void.Hubs
                 if (int.TryParse(userIdStr, out var userId)) return userId;
             return null;
         }
-
-
-
-
-
-
-        public async Task SendMessageToUser(int receiverId, string message)
-        {
-            var senderId = GetUserIdFromContext();
-            if (!senderId.HasValue) return;
-
-            var chat = new Chat
-            {
-                SenderId = senderId,
-                ReceiverId = receiverId,
-                Content = message,
-                Timestamp = DateTime.UtcNow,
-                IsRead = false
-            };
-
-            _context.Chats.Add(chat);
-            await _context.SaveChangesAsync();
-
-            await Clients.User(receiverId.ToString()).SendAsync("ReceiveMessage", chat);
-            await Clients.Caller.SendAsync("ReceiveMessage", chat);
-        }
-
-        public async Task JoinGroup(int groupId) => await Groups.AddToGroupAsync(Context.ConnectionId, groupId.ToString());
-        public async Task LeaveGroup(int groupId) => await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupId.ToString());
 
         public async Task SendMessageToGroup(int groupId, string message)
         {
