@@ -4,12 +4,12 @@ using Void.Models;
 
 namespace Void.Hubs
 {
-    public class ChatHub : Hub
+    public class PrivateChatHub : Hub
     {
         private readonly DatabaseContext _context;
         private static readonly HashSet<int> ConnectedUsers = new();
 
-        public ChatHub(DatabaseContext context)
+        public PrivateChatHub(DatabaseContext context)
         {
             _context = context;
         }
@@ -38,11 +38,6 @@ namespace Void.Hubs
             return null;
         }
 
-
-
-
-
-
         public async Task SendMessageToUser(int receiverId, string message)
         {
             var senderId = GetUserIdFromContext();
@@ -50,7 +45,7 @@ namespace Void.Hubs
 
             var chat = new Chat
             {
-                SenderId = senderId,
+                SenderId = senderId.Value,
                 ReceiverId = receiverId,
                 Content = message,
                 Timestamp = DateTime.UtcNow,
@@ -60,42 +55,10 @@ namespace Void.Hubs
             _context.Chats.Add(chat);
             await _context.SaveChangesAsync();
 
-            await Clients.User(receiverId.ToString()).SendAsync("ReceiveMessage", chat);
-            await Clients.Caller.SendAsync("ReceiveMessage", chat);
+            await Clients.User(receiverId.ToString()).SendAsync("ReceivePrivateMessage", chat);
+            await Clients.Caller.SendAsync("ReceivePrivateMessage", chat);
         }
-
-        public async Task JoinGroup(int groupId) => await Groups.AddToGroupAsync(Context.ConnectionId, groupId.ToString());
-        public async Task LeaveGroup(int groupId) => await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupId.ToString());
-
-        public async Task SendMessageToGroup(int groupId, string message)
-        {
-            var senderId = GetUserIdFromContext();
-            if (!senderId.HasValue) return;
-
-            var groupMessage = new GroupMessage
-            {
-                GroupId = groupId,
-                SenderId = senderId.Value,
-                Content = message,
-                Timestamp = DateTime.UtcNow
-            };
-
-            _context.GroupMessages.Add(groupMessage);
-            await _context.SaveChangesAsync();
-
-            await Clients.Group(groupId.ToString()).SendAsync("ReceiveGroupMessage", groupMessage);
-        }
-        public async Task SendMessage(string message)
-        {
-            var senderId = GetUserIdFromContext();
-            if (!senderId.HasValue) return;
-
-            await Clients.All.SendAsync("ReceiveMessage", new
-            {
-                SenderId = senderId.Value,
-                Content = message
-            });
-        }
-
     }
 }
+
+
