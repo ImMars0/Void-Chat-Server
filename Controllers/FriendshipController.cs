@@ -6,12 +6,12 @@ namespace Void.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FriendshipsController : ControllerBase
+    public class FriendshipController : ControllerBase
     {
         private readonly FriendshipService _friendshipService;
         private readonly UserService _userService;
 
-        public FriendshipsController(FriendshipService friendshipService, UserService userService)
+        public FriendshipController(FriendshipService friendshipService, UserService userService)
         {
             _friendshipService = friendshipService;
             _userService = userService;
