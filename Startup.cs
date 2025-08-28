@@ -39,8 +39,7 @@ namespace Void
 
             app.UseAuthentication();
             app.UseAuthorization();
-            app.MapHub<GroupChatHub>("/groupChatHub");
-            app.MapHub<PrivateChatHub>("/privateChatHub");
+            app.MapHub<ChatHub>("/chatHub");
             app.MapControllers();
 
 
