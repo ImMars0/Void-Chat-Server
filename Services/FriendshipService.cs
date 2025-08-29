@@ -72,7 +72,7 @@ namespace Void.Services
                 Id = f.Id,
                 UserId = f.UserId,
                 FriendId = f.FriendId,
-                FriendUsername = f.Friend.UserName,
+                FriendUsername = f.UserId == userId ? f.Friend.UserName : f.User.UserName,
                 Status = f.Status,
                 CreatedAt = f.CreatedAt
             }).ToList();
