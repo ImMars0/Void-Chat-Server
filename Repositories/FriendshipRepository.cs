@@ -33,6 +33,7 @@ namespace Void.Repositories
         {
             return await _context.Friendships
                 .Include(f => f.Friend)
+                .Include(f => f.User)
                 .Where(f => (f.UserId == userId || f.FriendId == userId) &&
                            f.Status == FriendshipStatus.Accepted)
                 .ToListAsync();
